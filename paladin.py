@@ -98,10 +98,11 @@ from collections import defaultdict
 from core import HEALING_RANGE
 from things import Player, Zombie, Wall, Box
 from utils import (
-    closest, distance, adyacent_positions, sort_by_distance, to_position,
+    closest, distance, adjacent_positions, sort_by_distance, to_position,
     possible_moves
 )
 from weapons import Shotgun
+
 
 INFINITE = float('inf')
 
@@ -176,7 +177,7 @@ class Strategy(object):
         self.targets = {}
         self.positions = defaultdict(list)
         self._a_star_obj = AStar(
-            distance, self.cost_heuristics, adyacent_positions)
+            distance, self.cost_heuristics, adjacent_positions)
         self.tactics = {}
 
     def cost_heuristics(self, initial, goal):
@@ -187,7 +188,7 @@ class Strategy(object):
             perc += self.PATH_THROUGH_WALL_RATIO
         elif isinstance(obj, Box):
             perc += self.PATH_THROUGH_BOX_RATIO
-        for pos in adyacent_positions(goal):
+        for pos in adjacent_positions(goal):
             neighobj = self.map[pos]
             if isinstance(neighobj, Wall):
                 perc += self.PATH_NEAR_WALL_RATIO
@@ -236,7 +237,7 @@ class Strategy(object):
         avgpos = average_position(players)
         for player in players:
             current_distance = distance(player, avgpos)
-            for newpos in adyacent_positions(player):
+            for newpos in adjacent_positions(player):
                 if (
                     not self.map.is_player(newpos) and
                     distance(newpos, avgpos) < current_distance
@@ -304,7 +305,7 @@ class SafeHouseStrategy(Strategy):
 
     def can_run_to_the_choppa(self):
         for player in self.players_not_in_safehouse():
-            for pos in adyacent_positions(player):
+            for pos in adjacent_positions(player):
                 if pos in self.objectives:
                     return True
         return False
@@ -403,7 +404,7 @@ class Tactics(object):
             assert current_pos == player_position
             prev_pos = poslog.pop()
             if poslog.pop() == player_position and poslog.pop() == prev_pos:
-                for pos in adyacent_positions(self.player):
+                for pos in adjacent_positions(self.player):
                     zombie = closest(pos, self.map.zombies)
                     if (
                         next_pos and
@@ -702,15 +703,15 @@ class Paladin(Player):
 
     def next_step(self, things, turn):
         self.paladin_strategy.process_turn(
-            turn, things, self.rules, self.objetives)
+            turn, things, self.rules, self.objectives)
         return self.paladin_strategy.action_for(self)
 
 
-def create(rules, objetives=None):
+def create(rules, objectives=None):
     return Paladin(
         'paladin',
         'red',
         weapon=Shotgun(),
         rules=rules,
-        objetives=objetives
+        objectives=objectives
     )
